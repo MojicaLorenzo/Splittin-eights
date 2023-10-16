@@ -1,14 +1,25 @@
 import random
+from Classes.__init__ import conn, cursor
 
 class Game:
-    def __init__(self, player):
+    def __init__(self, player, id = None):
         self.player = player
+        self.id = id
         self.deck = self.generate_deck()
         self.player_hand = []
         self.dealer_hand = []
         self.bet = 0  # Initialize bet to 0
 
     # ... rest of the Game class ...
+
+    @property
+    def player(self):
+        return self._player
+    
+    @player.setter
+    def player(self, player):
+        if isinstance(player, Player):
+            self._player = player
 
     def place_bet(self, bet):
         if bet <= self.player.chips:
@@ -87,6 +98,19 @@ class Game:
         else:
             return "Dealer"
         
+    @classmethod
+    def create_table(cls):
+        sql = '''
+            CREATE TABLE IF NOT EXISTS games (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                player_id INTEGER,
+                bet INTEGER,
+                result TEXT,
+                FOREIGN KEY (player_id) REFERENCES players(id))
+        '''
+        cursor.execute(sql)
+        conn.commit()
+        
 class Player:
 
     def __init__(self, name, chips=1000, id = None):
@@ -94,6 +118,17 @@ class Player:
         self.chips = chips
         self.id = id
         self.hand = []
+
+    @property
+    def name(self):
+        return self._name
+    
+    @name.setter
+    def name(self, name):
+        if isinstance(name, str) and len(name) > 2 and not hasattr(self, 'name'):
+            self._name = name
+        else:
+            raise Exception('Invalid Name')
 
     def bet(self, amount):
         # Place a bet
@@ -141,6 +176,18 @@ class Player:
     def is_busted(self):
         # Check if the player's hand value exceeds 21
         return self.get_hand_value() > 21
+    
+    @classmethod
+    def create_table(cls):
+        sql = '''
+            CREATE TABLE IF NOT EXISTS players (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT UNIQUE,
+                chips INTEGER
+            )
+        '''
+        cursor.execute(sql)
+        conn.commit()
 
     def __str__(self):
         return f"Player {self.name}: Chips {self.chips}"
@@ -167,3 +214,5 @@ class Card:
     def __repr__(self):
         return str(self)
 
+enzo = Player('enzo')
+print(enzo.name)
