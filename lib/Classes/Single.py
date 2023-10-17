@@ -30,42 +30,23 @@ class Game:
             print("Insufficient chips to place the bet.")
             return False
 
-
-
     def generate_deck(self):
         ranks = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"]
         suits = ["Hearts", "Diamonds", "Clubs", "Spades"]
         deck = [{"rank": rank, "suit": suit} for rank in ranks for suit in suits]
         random.shuffle(deck)
+        print('Deck Generated')
         return deck
 
     def deal_initial_cards(self):
         # Deal two cards to the player and two cards to the dealer
+        self.player_hand = []
+        self.dealer_hand = []
         for _ in range(2):
             self.player_hand.append(self.deck.pop())
             self.dealer_hand.append(self.deck.pop())
-
-    def calculate_hand_value(self, hand):
-        # Calculate the total value of a hand, accounting for Aces
-        hand_value = 0
-        num_aces = 0
-
-        for card in hand:
-            rank = card["rank"]
-            if rank.isdigit():
-                hand_value += int(rank)
-            elif rank in ("K", "Q", "J"):
-                hand_value += 10
-            elif rank == "A":
-                hand_value += 11
-                num_aces += 1
-
-        # Adjust the value of Aces if the hand value exceeds 21
-        while hand_value > 21 and num_aces > 0:
-            hand_value -= 10
-            num_aces -= 1
-
-        return hand_value
+        print(self.player_hand)
+        # print(self.dealer_hand)
 
     def player_hit(self):
         # Player requests a hit (draws a card)
@@ -76,6 +57,11 @@ class Game:
         # Dealer plays according to standard rules (stands on 17 or higher)
         while self.calculate_hand_value(self.dealer_hand) < 17:
             self.dealer_hand.append(self.deck.pop())
+            print(self.dealer_hand)
+        Game.determine_winner(self)
+        print(Game.determine_winner(self))
+
+        
     def is_game_over(self):
         # Check if the game is over (player or dealer has blackjack or busted)
         player_value = self.calculate_hand_value(self.player_hand)
@@ -90,11 +76,11 @@ class Game:
         if player_value > 21:
             return "Dealer"
         elif dealer_value > 21:
-            return self.player.name
+            return self.current_player.name
         elif player_value == dealer_value:
             return "Tie"
         elif player_value > dealer_value:
-            return self.player.name
+            return self.current_player.name
         else:
             return "Dealer"
         
@@ -103,17 +89,33 @@ class Game:
         sql = '''
             CREATE TABLE IF NOT EXISTS games (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                player_id INTEGER,
                 bet INTEGER,
                 result TEXT,
+                player_name TEXT,
+                player_id INTEGER,
                 FOREIGN KEY (player_id) REFERENCES players(id))
         '''
         cursor.execute(sql)
         conn.commit()
+    
+    def save(self):
+        sql = '''
+            INSERT INTO games (bet, result, player_name, player_id)
+            VALUES (?, ?, ?, ?)
+        '''
+        cursor.execute(sql, (self.bet, self.determine_winner(), self.player.name, self.player.id))
+        conn.commit()
+
+    
+    @classmethod
+    def create(cls, name, chips):
+        player = cls(name, chips)
+        player.save()
+        return player
         
 class Player:
 
-    def __init__(self, name, chips=1000, id = None):
+    def __init__(self, name = None, chips=1000, id = None):
         self.name = name
         self.chips = chips
         self.id = id
@@ -125,10 +127,20 @@ class Player:
     
     @name.setter
     def name(self, name):
-        if isinstance(name, str) and len(name) > 2 and not hasattr(self, 'name'):
-            self._name = name
+        if isinstance(name, str) and len(name) > 0:
+            # if not self.name_exists('data.db'):
+                self._name = name
+            # else:
+            #     raise Exception('Name exists, enter new name')
         else:
             raise Exception('Invalid Name')
+        
+    # def name_exists(self):
+    #     cursor.execute('SELECT COUNT(*) FROM players WHERE name = ?', (self._name,))
+    #     result = cursor.fetchone()
+    #     conn.close()
+    #     return result[0] > 0
+
 
     def bet(self, amount):
         # Place a bet
@@ -178,6 +190,14 @@ class Player:
         return self.get_hand_value() > 21
     
     @classmethod
+    def drop_table(cls):
+        sql = '''
+            DROP TABLE IF EXISTS players
+        '''
+        cursor.execute(sql)
+        conn.commit()
+    
+    @classmethod
     def create_table(cls):
         sql = '''
             CREATE TABLE IF NOT EXISTS players (
@@ -189,8 +209,24 @@ class Player:
         cursor.execute(sql)
         conn.commit()
 
+
     def __str__(self):
         return f"Player {self.name}: Chips {self.chips}"
+    
+    def save(self):
+        sql = '''
+            INSERT INTO players (name, chips)
+            VALUES (?, ?)
+        '''
+        cursor.execute(sql, (self.name, self.chips))
+        conn.commit()
+
+    
+    @classmethod
+    def create(cls, name, chips):
+        player = cls(name, chips)
+        player.save()
+        return player
     
     
 class Card:
@@ -213,6 +249,3 @@ class Card:
 
     def __repr__(self):
         return str(self)
-
-enzo = Player('enzo')
-print(enzo.name)
