@@ -2,13 +2,14 @@ import random
 from Classes.__init__ import conn, cursor
 
 class Game:
-    def __init__(self, player, id = None):
+    def __init__(self, player, id = None, result = "Yes", bet = "Eeyore"):
         self.player = player
         self.id = id
         self.deck = self.generate_deck()
         self.player_hand = []
         self.dealer_hand = []
-        self.bet = 0  # Initialize bet to 0
+        self.result = result
+        self.bet = bet  # Initialize bet to 0; Eleanor fix
 
     # ... rest of the Game class ...
 
@@ -55,11 +56,14 @@ class Game:
 
     def dealer_play(self):
         # Dealer plays according to standard rules (stands on 17 or higher)
-        while self.calculate_hand_value(self.dealer_hand) < 17:
+        while self.calculate_hand_value(self.dealer_hand) < 17 and self.calculate_hand_value(self.player_hand) <21 :
             self.dealer_hand.append(self.deck.pop())
-            print(self.dealer_hand)
+        print(self.dealer_hand)
         Game.determine_winner(self)
         print(Game.determine_winner(self))
+        self.update_results()
+        self.game_menu()
+
 
         
     def is_game_over(self):
@@ -72,6 +76,7 @@ class Game:
         # Determine the winner of the game
         player_value = self.calculate_hand_value(self.player_hand)
         dealer_value = self.calculate_hand_value(self.dealer_hand)
+        
 
         if player_value > 21:
             return "Dealer"
@@ -91,7 +96,6 @@ class Game:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 bet INTEGER,
                 result TEXT,
-                player_name TEXT,
                 player_id INTEGER,
                 FOREIGN KEY (player_id) REFERENCES players(id))
         '''
@@ -100,18 +104,23 @@ class Game:
     
     def save(self):
         sql = '''
-            INSERT INTO games (bet, result, player_name, player_id)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO games (bet, result, player_id)
+            VALUES (?, ?, ?)
         '''
-        cursor.execute(sql, (self.bet, self.determine_winner(), self.player.name, self.player.id))
+        cursor.execute(sql, (self.bet, self.result, 4))
         conn.commit()
 
     
     @classmethod
-    def create(cls, name, chips):
-        player = cls(name, chips)
-        player.save()
-        return player
+    def create(cls, bet, result, player_id):
+        print(f'Bet Amount: {bet}')
+        # result = cls(player, player_id, result, bet)
+        result = cls(player = None, result = result, bet = bet) #Eleasor fix
+        print(result.bet)
+        # print(result.bet)
+        result.save()
+        return result
+        
         
 class Player:
 
