@@ -11,6 +11,7 @@ class Menu:
         self.player_hand = []
         self.dealer_hand = []
         self.deck = Game.generate_deck(self)
+        self.bet_amount = None
 
     def main_menu(self):
         Player.drop_table()
@@ -115,13 +116,14 @@ class Menu:
         print(self.dealer_hand[1])
 
     def display_chips(self):
-        print('Feature Unavailable')
+        print(f'{self.current_player.name} has {self.current_player.chips} chips.')
 
     def place_bet(self):
         while True:
             bet_amount = input(f"{self.current_player.name}, enter your bet amount: ")
             if bet_amount.isdigit():
                 if self.game.place_bet(int(bet_amount)):
+                    self.bet_amount = bet_amount
                     break
             else:
                 print("Invalid bet amount. Please enter a valid number.")
@@ -150,6 +152,7 @@ class Menu:
             self.player_hand.append(self.deck.pop())
         self.calculate_hand_value(self.player_hand)
         print(self.player_hand)
+        print(self.dealer_hand[1])
 
     def is_game_over(self):
         # Check if the game is over (player or dealer has blackjack or busted)
@@ -157,21 +160,10 @@ class Menu:
         dealer_value = self.calculate_hand_value(self.dealer_hand)
         return player_value >= 21 or dealer_value >= 21
     
-    # def determine_winner(self):
-    #     # Determine the winner of the game
-    #     player_value = self.calculate_hand_value(self.player_hand)
-    #     dealer_value = self.calculate_hand_value(self.dealer_hand)
-
-    #     if player_value > 21:
-    #         return "Dealer"
-    #     elif dealer_value > 21:
-    #         return self.player.name
-    #     elif player_value == dealer_value:
-    #         return "Tie"
-    #     elif player_value > dealer_value:
-    #         return self.player.name
-    #     else:
-    #         return "Dealer"
+    def update_results(self):
+        winner = Game.determine_winner(self)
+        print("winner" + str(self.bet_amount))
+        Game.create(self.bet_amount, winner, self.current_player.id)
 
 if __name__ == "__main__":
     menu = Menu()
