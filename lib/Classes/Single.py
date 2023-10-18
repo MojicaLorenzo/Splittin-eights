@@ -2,14 +2,16 @@ import random
 from Classes.__init__ import conn, cursor
 
 class Game:
-    def __init__(self, player, id = None, result = "Yes", bet = "Eeyore"):
+    def __init__(self, player, id = None, result = "Yes", bet = "Eeyore", player_id = None):
         self.player = player
         self.id = id
         self.deck = self.generate_deck()
         self.player_hand = []
         self.dealer_hand = []
         self.result = result
-        self.bet = bet  # Initialize bet to 0; Eleanor fix
+        self.bet = bet 
+        self.player_id = player_id
+        # Initialize bet to 0; Eleanor fix
 
     # ... rest of the Game class ...
 
@@ -107,19 +109,24 @@ class Game:
             INSERT INTO games (bet, result, player_id)
             VALUES (?, ?, ?)
         '''
-        cursor.execute(sql, (self.bet, self.result, 4))
+        cursor.execute(sql, (self.bet, self.result, self.player_id))
         conn.commit()
 
     
     @classmethod
     def create(cls, bet, result, player_id):
+        player = player.get_by_id(player_id)
         print(f'Bet Amount: {bet}')
         # result = cls(player, player_id, result, bet)
-        result = cls(player = None, result = result, bet = bet) #Eleasor fix
-        print(result.bet)
+        if player:
+            result = cls(player = None, result = result, bet = bet, player_id = player_id) #Eleasor fix
+            print(result.bet)
         # print(result.bet)
-        result.save()
-        return result
+            result.save()
+            return result
+        else:
+            print("player not found.")
+            return None
         
         
 class Player:
@@ -217,6 +224,20 @@ class Player:
         '''
         cursor.execute(sql)
         conn.commit()
+    
+    @classmethod
+    def get_by_id(cls, player_id):
+        # Query the database to retrieve a player by ID
+        sql = "SELECT * FROM players WHERE id = ?"
+        cursor.execute(sql, (player_id,))
+        player_data = cursor.fetchone()
+
+        if player_data:
+            # Create a Player object from the retrieved data
+            player_id, name, chips = player_data
+            return cls(name, chips, player_id)
+        else:
+            return None
 
 
     def __str__(self):

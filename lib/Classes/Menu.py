@@ -82,13 +82,13 @@ class Menu:
 
     def new_game(self):
         self.place_bet()
-
+        Game.generate_deck(self)
+        Game.deal_initial_cards(self)  
         Game.generate_deck(self)
         Game.deal_initial_cards(self)
         self.calculate_hand_value(self.player_hand)
         self.show_dealers_top_card()
         self.in_game_menu()
-
         pass
 
     def calculate_hand_value(self, hand):
@@ -162,8 +162,9 @@ class Menu:
     
     def update_results(self):
         winner = Game.determine_winner(self)
-        print("winner" + str(self.bet_amount))
-        Game.create(self.bet_amount, winner, self.current_player.id)
+        player_num = Player.get_by_id(self.current_player)
+        print(player_num)
+        # Game.create(self.bet_amount, winner, player_num)
 
 if __name__ == "__main__":
     menu = Menu()
