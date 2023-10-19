@@ -1,52 +1,55 @@
-# class Game:
-#     def __init__(self, player, bet):
-#         self.player = player
-#         self.bet = bet
-#         pass
 import random
+from Classes.__init__ import conn, cursor
 
 class Game:
-    def __init__(self, player, bet):
+
+    all = {}
+
+    def __init__(self, player, id = None, result = "Yes", bet = "Eeyore", player_id = None):
         self.player = player
-        self.bet = bet
+        self.id = id
         self.deck = self.generate_deck()
         self.player_hand = []
         self.dealer_hand = []
+        self.result = result
+        self.bet = bet 
+        self.player_id = player_id
+        # Initialize bet to 0
+
+    @property
+    def player(self):
+        return self._player
+    
+    @player.setter
+    def player(self, player):
+        from Classes.Player import Player
+        if isinstance(player, Player):
+            self._player = player
+
+    def place_bet(self, bet):
+        if bet <= self.player.chips:
+            self.bet = bet
+            self.player.chips -= bet
+            return True
+        else:
+            print("Insufficient chips to place the bet.")
+            return False
 
     def generate_deck(self):
         ranks = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"]
-        suits = ["Hearts", "Diamonds", "Clubs", "Spades"]
+        suits = ["\u2663", "\u2665", "\u2666", "\u2660"]
         deck = [{"rank": rank, "suit": suit} for rank in ranks for suit in suits]
         random.shuffle(deck)
         return deck
 
     def deal_initial_cards(self):
         # Deal two cards to the player and two cards to the dealer
+        self.player_hand = []
+        self.dealer_hand = []
         for _ in range(2):
             self.player_hand.append(self.deck.pop())
             self.dealer_hand.append(self.deck.pop())
-
-    def calculate_hand_value(self, hand):
-        # Calculate the total value of a hand, accounting for Aces
-        hand_value = 0
-        num_aces = 0
-
-        for card in hand:
-            rank = card["rank"]
-            if rank.isdigit():
-                hand_value += int(rank)
-            elif rank in ("K", "Q", "J"):
-                hand_value += 10
-            elif rank == "A":
-                hand_value += 11
-                num_aces += 1
-
-        # Adjust the value of Aces if the hand value exceeds 21
-        while hand_value > 21 and num_aces > 0:
-            hand_value -= 10
-            num_aces -= 1
-
-        return hand_value
+        print(self.player_hand)
 
     def player_hit(self):
         # Player requests a hit (draws a card)
@@ -55,8 +58,16 @@ class Game:
 
     def dealer_play(self):
         # Dealer plays according to standard rules (stands on 17 or higher)
-        while self.calculate_hand_value(self.dealer_hand) < 17:
+        while self.calculate_hand_value(self.dealer_hand) < 17 and self.calculate_hand_value(self.player_hand) <21 :
             self.dealer_hand.append(self.deck.pop())
+        print(self.dealer_hand)
+        Game.determine_winner(self)
+        print(f'WINNER: {Game.determine_winner(self)}')
+        print(f'{self.current_player.name} won {self.calc_winnings()} chips')
+        self.update_chips()
+        self.update_results()
+        self.game_menu()
+        
     def is_game_over(self):
         # Check if the game is over (player or dealer has blackjack or busted)
         player_value = self.calculate_hand_value(self.player_hand)
@@ -67,14 +78,84 @@ class Game:
         # Determine the winner of the game
         player_value = self.calculate_hand_value(self.player_hand)
         dealer_value = self.calculate_hand_value(self.dealer_hand)
-
+        
         if player_value > 21:
             return "Dealer"
         elif dealer_value > 21:
-            return self.player.name
+            return self.current_player.name
         elif player_value == dealer_value:
             return "Tie"
         elif player_value > dealer_value:
-            return self.player.name
+            return self.current_player.name
         else:
             return "Dealer"
+        
+    def delete(self):
+        sql = '''
+            DELETE FROM games
+            WHERE player_id = ?
+        '''
+
+        cursor.execute(sql, (self.player_id, ))
+        conn.commit()
+
+    @classmethod
+    def instance_from_db(cls, row):
+        result = cls.all.get(row[0])
+        if result:
+            result.id = row[0]
+            result.bet = row[1]
+            result.result = row[2]
+            result.player_id = row[3]
+        else:
+            result = cls(player = None, bet = row[1], result = row[2], player_id = row[3])
+            result.id = row[0]
+            cls.all[result.id] = result
+        return result
+
+    @classmethod
+    def find_by_results_id(cls, player_id):
+        sql = ''' 
+            SELECT *
+            FROM games
+            WHERE player_id = ?
+        '''
+
+        rows = cursor.execute(sql, (player_id, )).fetchall()
+
+        return [cls.instance_from_db(row) for row in rows]
+        
+    @classmethod
+    def create_table(cls):
+        sql = '''
+            CREATE TABLE IF NOT EXISTS games (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                bet INTEGER,
+                result TEXT,
+                player_id INTEGER,
+                FOREIGN KEY (player_id) REFERENCES players(id))
+        '''
+        cursor.execute(sql)
+        conn.commit()
+    
+    def save(self):
+        sql = '''
+            INSERT INTO games (bet, result, player_id)
+            VALUES (?, ?, ?)
+        '''
+        cursor.execute(sql, (self.bet, self.result, self.player_id))
+        conn.commit()
+
+    @classmethod
+    def drop_table(cls):
+        sql = '''
+            DROP TABLE IF EXISTS games
+        '''
+        cursor.execute(sql)
+        conn.commit()
+
+    
+    @classmethod
+    def create(cls, bet, result, player_id):
+        result = cls(player = None, result = result, bet = bet, player_id = player_id)
+        result.save()

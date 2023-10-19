@@ -1,6 +1,6 @@
 import os
-from Classes.Single import Player
-from Classes.Single import Game
+from Classes.Player import Player
+from Classes.Game import Game
 
 class Menu:
 
@@ -12,17 +12,20 @@ class Menu:
         self.dealer_hand = []
         self.deck = Game.generate_deck(self)
         self.bet_amount = None
+        self.player_chips = None
 
     def main_menu(self):
-        Player.drop_table()
+        # Player.drop_table()
+        # Game.drop_table()
         Player.create_table()
         Game.create_table()
         while True:
             os.system('clear' if os.name == 'posix' else 'cls')
-            print("PLAYER MENU")
-            print("1. New Player")
-            print("2. Load Player")
-            print("3. Exit")
+            print("MAIN MENU")
+            print("1. New Player\n")
+            print("2. Load Player\n")
+            print("3. View Results\n")
+            print("4. Exit\n")
             choice = input("Enter your choice: ")
 
             if choice == "1":
@@ -30,6 +33,8 @@ class Menu:
             elif choice == "2":
                 self.load_player()
             elif choice == "3":
+                self.results_menu()
+            elif choice == "4":
                 print("Goodbye!")
                 break
             else:
@@ -46,28 +51,48 @@ class Menu:
         player = Player.create(player_name, int(player_chips))
         self.players.append(player)
         self.current_player = player
+        self.player_chips = int(player_chips)
 
         self.game = Game(player)
         self.game_menu()
 
     def load_player(self):
         player_name = input("Enter the player's name to load: ")
-
-        for player in self.players:
-            if player.name == player_name:
-                self.current_player = player
-                self.game = Game(player)
+        searched_name = Player.find_by_name(player_name)
+        os.system('clear' if os.name == 'posix' else 'cls')
+        print(f'Welcome Back {searched_name.name}!')
+        if searched_name.name == player_name:
+                self.current_player = searched_name
+                self.game = Game(searched_name)
                 self.game_menu()
                 return
 
         input("Player not found. Press Enter to continue...")
 
+    def results_menu(self):
+        os.system('clear' if os.name == 'posix' else 'cls')
+        while True:
+            print("RESULTS MENU")
+            print("1. Results by name")
+            print("2. ALL Game Results")
+            print("3. Exit")
+            choice = input("Enter your choice: ")
+
+            if choice == "1":
+                print('Under Construction')
+            elif choice == "2":
+                print('Under Construction')
+            elif choice == "3":
+                self.main_menu()
+                break
+
     def game_menu(self):
         while True:
-            print("GAME MENU")
+            print("PLAYER MENU")
             print("1. New Game")
             print("2. Check Chip Count")
             print("3. Cash Out")
+            print("4. DELETE PLAYER")
             choice = input("Enter your choice: ")
 
             if choice == "1":
@@ -76,15 +101,17 @@ class Menu:
                 self.display_chips()
             elif choice == "3":
                 self.main_menu()
+            elif choice == "4":
+                self.delete_player()
                 break
             else:
                 input("Invalid choice. Press Enter to continue...")
 
     def new_game(self):
         self.place_bet()
+        self.calc_winnings()
         Game.generate_deck(self)
-        Game.deal_initial_cards(self)  
-        Game.generate_deck(self)
+        os.system('clear' if os.name == 'posix' else 'cls')
         Game.deal_initial_cards(self)
         self.calculate_hand_value(self.player_hand)
         self.show_dealers_top_card()
@@ -162,9 +189,34 @@ class Menu:
     
     def update_results(self):
         winner = Game.determine_winner(self)
-        player_num = Player.get_by_id(self.current_player)
-        print(player_num)
-        # Game.create(self.bet_amount, winner, player_num)
+        player_num = Player.find_by_name(self.current_player.name)
+        Game.create(self.bet_amount, winner, player_num.id)
+    
+    def calc_winnings(self):
+        current_bet = int(self.bet_amount)
+        result = Game.determine_winner(self)
+        if result == "Tie":
+            return current_bet
+        elif result == self.current_player.name:
+            return (current_bet * 2)
+        elif result == "Dealer":
+            return 0
+        
+    def update_chips(self):
+        current = Player.find_by_name(self.current_player.name)
+        new_chips = int(self.current_player.chips) + (self.calc_winnings())
+        self.current_player.name = self.current_player.name
+        self.current_player.chips = new_chips
+        self.current_player.id = current.id
+        self.current_player.update()
+
+    def delete_player(self):
+        current = Player.find_by_name(self.current_player.name)
+        results = Game.find_by_results_id(current.id)
+        for result in results:
+            Game.delete(result)
+        Player.delete(current)
+        self.main_menu()
 
 if __name__ == "__main__":
     menu = Menu()

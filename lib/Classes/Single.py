@@ -115,21 +115,18 @@ class Game:
     
     @classmethod
     def create(cls, bet, result, player_id):
-        player = player.get_by_id(player_id)
         print(f'Bet Amount: {bet}')
         # result = cls(player, player_id, result, bet)
-        if player:
-            result = cls(player = None, result = result, bet = bet, player_id = player_id) #Eleasor fix
-            print(result.bet)
+        result = cls(player = None, result = result, bet = bet, player_id = player_id) #Eleasor fix
+        print(result.bet)
         # print(result.bet)
-            result.save()
-            return result
-        else:
-            print("player not found.")
-            return None
+        result.save()
+
         
         
 class Player:
+
+    all = {}
 
     def __init__(self, name = None, chips=1000, id = None):
         self.name = name
@@ -224,20 +221,44 @@ class Player:
         '''
         cursor.execute(sql)
         conn.commit()
+
+    @classmethod
+    def instance_from_db(cls, row):
+        player = cls.all.get(row[0])
+
+        if player:
+            player.id = row[0]
+            player.name = row[1]
+            player.chips = row[2]
+        else:
+            player = cls(row[1], row[2])
+            player.id = row[0]
+            cls.all[player.id] = player
+        return player
+
     
     @classmethod
-    def get_by_id(cls, player_id):
+    def get_by_id(cls, id):
         # Query the database to retrieve a player by ID
-        sql = "SELECT * FROM players WHERE id = ?"
-        cursor.execute(sql, (player_id,))
-        player_data = cursor.fetchone()
+        sql = '''
+            SELECT *
+            FROM players 
+            WHERE id = ?
+        '''
+        row = cursor.execute(sql, (id,)).fetchone()
 
-        if player_data:
-            # Create a Player object from the retrieved data
-            player_id, name, chips = player_data
-            return cls(name, chips, player_id)
-        else:
-            return None
+        return cls.instance_from_db(row) if row else None
+    
+    @classmethod
+    def find_by_name(cls, name):
+        sql = '''
+            SELECT *
+            FROM players
+            WHERE name = ?
+        '''
+        row = cursor.execute(sql, (name, )).fetchone()
+
+        return cls.instance_from_db(row) if row else None
 
 
     def __str__(self):

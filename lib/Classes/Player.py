@@ -1,13 +1,26 @@
-# class Player:
-#     def __init__(self, name, cards):
-#         self.name = name
-#         self.cards = cards
-#         pass
+from Classes.__init__ import conn, cursor
+
 class Player:
-    def __init__(self, name, chips=1000):
+
+    all = {}
+
+    def __init__(self, name = None, chips=1000, id = None):
         self.name = name
         self.chips = chips
+        self.id = id
         self.hand = []
+
+    @property
+    def name(self):
+        return self._name
+    
+    @name.setter
+    def name(self, name):
+        if isinstance(name, str) and len(name) > 0:
+                self._name = name
+        else:
+            raise Exception('Invalid Name')
+
 
     def bet(self, amount):
         # Place a bet
@@ -22,39 +35,87 @@ class Player:
         # Receive winnings after winning a round
         self.chips += amount
 
-    def receive_card(self, card):
-        # Receive a card and add it to the player's hand
-        self.hand.append(card)
-
-    def clear_hand(self):
-        # Clear the player's hand after each round
-        self.hand = []
-
-    def get_hand_value(self):
-        # Calculate the total value of the player's hand
-        hand_value = 0
-        num_aces = 0
-
-        for card in self.hand:
-            rank = card["rank"]
-            if rank.isdigit():
-                hand_value += int(rank)
-            elif rank in ("K", "Q", "J"):
-                hand_value += 10
-            elif rank == "A":
-                hand_value += 11
-                num_aces += 1
-
-        # Adjust the value of Aces if the hand value exceeds 21
-        while hand_value > 21 and num_aces > 0:
-            hand_value -= 10
-            num_aces -= 1
-
-        return hand_value
-
-    def is_busted(self):
-        # Check if the player's hand value exceeds 21
-        return self.get_hand_value() > 21
-
     def __str__(self):
         return f"Player {self.name}: Chips {self.chips}"
+    
+    def save(self):
+        sql = '''
+            INSERT INTO players (name, chips)
+            VALUES (?, ?)
+        '''
+        cursor.execute(sql, (self.name, self.chips))
+        conn.commit()
+    
+    def update(self):
+        sql = '''
+            UPDATE players
+            SET name = ?, chips = ?
+            WHERE id = ?
+        '''
+
+        cursor.execute(sql, (self.name, self.chips, self.id))
+        conn.commit()
+
+    def delete(self):
+        sql = '''
+            DELETE FROM players
+            WHERE id = ?
+        '''
+
+        cursor.execute(sql, (self.id, ))
+        conn.commit()
+
+        del Player.all[self.id]
+        self.id = None
+
+    @classmethod
+    def create(cls, name, chips):
+        player = cls(name, chips)
+        player.save()
+        return player
+    
+    @classmethod
+    def drop_table(cls):
+        sql = '''
+            DROP TABLE IF EXISTS players
+        '''
+        cursor.execute(sql)
+        conn.commit()
+    
+    @classmethod
+    def create_table(cls):
+        sql = '''
+            CREATE TABLE IF NOT EXISTS players (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT UNIQUE,
+                chips INTEGER
+            )
+        '''
+        
+        cursor.execute(sql)
+        conn.commit()
+
+    @classmethod
+    def instance_from_db(cls, row):
+        player = cls.all.get(row[0])
+
+        if player:
+            player.id = row[0]
+            player.name = row[1]
+            player.chips = row[2]
+        else:
+            player = cls(row[1], row[2])
+            player.id = row[0]
+            cls.all[player.id] = player
+        return player
+    
+    @classmethod
+    def find_by_name(cls, name):
+        sql = '''
+            SELECT *
+            FROM players
+            WHERE name = ?
+        '''
+        row = cursor.execute(sql, (name, )).fetchone()
+
+        return cls.instance_from_db(row) if row else None
