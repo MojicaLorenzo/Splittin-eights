@@ -2,6 +2,8 @@ from Classes.__init__ import conn, cursor
 
 class Player:
 
+# CONSTRUCTOR
+
     all = {}
 
     def __init__(self, name = None, chips=1000, id = None):
@@ -9,6 +11,8 @@ class Player:
         self.chips = chips
         self.id = id
         self.hand = []
+
+# PROPERTIES
 
     @property
     def name(self):
@@ -21,22 +25,10 @@ class Player:
         else:
             raise Exception('Invalid Name')
 
-
-    def bet(self, amount):
-        # Place a bet
-        if amount <= self.chips:
-            self.chips -= amount
-            return amount
-        else:
-            print("Insufficient chips to place the bet.")
-            return 0
-
-    def receive_winnings(self, amount):
-        # Receive winnings after winning a round
-        self.chips += amount
-
     def __str__(self):
         return f"Player {self.name}: Chips {self.chips}"
+    
+# DATABASE INSTANCES
     
     def save(self):
         sql = '''
@@ -68,6 +60,8 @@ class Player:
         del Player.all[self.id]
         self.id = None
 
+# DATABASE METHODS
+
     @classmethod
     def create(cls, name, chips):
         player = cls(name, chips)
@@ -91,7 +85,7 @@ class Player:
                 chips INTEGER
             )
         '''
-        
+
         cursor.execute(sql)
         conn.commit()
 
@@ -117,5 +111,17 @@ class Player:
             WHERE name = ?
         '''
         row = cursor.execute(sql, (name, )).fetchone()
+
+        return cls.instance_from_db(row) if row else None
+    
+    @classmethod
+    def find_by_id(cls, id):
+        sql = ''' 
+            SELECT *
+            FROM players
+            WHERE id = ?
+        '''
+
+        row = cursor.execute(sql, (id, )).fetchone()
 
         return cls.instance_from_db(row) if row else None

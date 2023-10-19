@@ -34,13 +34,25 @@ class Game:
         else:
             print("Insufficient chips to place the bet.")
             return False
+        
+    def generate_new_decks(self):
+        ranks = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"]
+        suits = ["Hearts", "Diamonds", "Clubs", "Spades"]
+        deck = [{"rank": rank, "suit": suit} for rank in ranks for suit in suits]
+        decks = deck + deck
+        return decks
 
     def generate_deck(self):
         ranks = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"]
         suits = ["Hearts", "Diamonds", "Clubs", "Spades"]
         deck = [{"rank": rank, "suit": suit} for rank in ranks for suit in suits]
-        random.shuffle(deck)
-        return deck
+        decks = deck + deck
+        if len(decks) < 20:
+            self.generate_new_decks()
+            random.shuffle(decks)
+        else:
+            random.shuffle(decks)
+        return decks
 
     def deal_initial_cards(self):
         # Deal two cards to the player and two cards to the dealer
@@ -49,22 +61,16 @@ class Game:
         for _ in range(2):
             self.player_hand.append(self.deck.pop())
             self.dealer_hand.append(self.deck.pop())
-        # print(self.player_hand)
-        # Game.display_hand(self.player_hand, title="Player's Hand")
-        # self.display_hand_ascii(self.player_hand, title="Player's Hand")
-
-    def display_hand(self, hand, title=""):
-        from Classes.Cards import Card
-        cards_ascii = [Card(card["rank"], card["suit"]).ascii_representation() for card in hand]
-        for i in range(7):
-            print(" ".join(card[i] for card in cards_ascii))
-        print(title)
 
     def player_hit(self):
-        # Player requests a hit (draws a card)
+
+        #DRAWS CARD
+
         if not self.is_game_over():
             self.player_hand.append(self.deck.pop())
-        #new code ascii
+
+        #ASCII DISPLAY
+
         self.display_hand(self.player_hand, title="Player's Hand")
 
     def dealer_play(self):
@@ -81,12 +87,6 @@ class Game:
         self.update_chips()
         self.update_results()
         self.game_menu()
-        
-    def is_game_over(self):
-        # Check if the game is over (player or dealer has blackjack or busted)
-        player_value = self.calculate_hand_value(self.player_hand)
-        dealer_value = self.calculate_hand_value(self.dealer_hand)
-        return player_value >= 21 or dealer_value >= 21
 
     def determine_winner(self):
         # Determine the winner of the game
@@ -104,6 +104,8 @@ class Game:
         else:
             return "Dealer"
         
+# DATABASE INSTANCES
+        
     def delete(self):
         sql = '''
             DELETE FROM games
@@ -112,6 +114,34 @@ class Game:
 
         cursor.execute(sql, (self.player_id, ))
         conn.commit()
+    
+    def save(self):
+        sql = '''
+            INSERT INTO games (bet, result, player_id)
+            VALUES (?, ?, ?)
+        '''
+        cursor.execute(sql, (self.bet, self.result, self.player_id))
+        conn.commit()
+
+# DATABASE METHODS
+        
+    @classmethod
+    def create_table(cls):
+        sql = '''
+            CREATE TABLE IF NOT EXISTS games (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                bet INTEGER,
+                result TEXT,
+                player_id INTEGER,
+                FOREIGN KEY (player_id) REFERENCES players(id))
+        '''
+        cursor.execute(sql)
+        conn.commit()
+    
+    @classmethod
+    def create(cls, bet, result, player_id):
+        result = cls(player = None, result = result, bet = bet, player_id = player_id)
+        result.save()
 
     @classmethod
     def instance_from_db(cls, row):
@@ -138,27 +168,16 @@ class Game:
         rows = cursor.execute(sql, (player_id, )).fetchall()
 
         return [cls.instance_from_db(row) for row in rows]
-        
-    @classmethod
-    def create_table(cls):
-        sql = '''
-            CREATE TABLE IF NOT EXISTS games (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                bet INTEGER,
-                result TEXT,
-                player_id INTEGER,
-                FOREIGN KEY (player_id) REFERENCES players(id))
-        '''
-        cursor.execute(sql)
-        conn.commit()
     
-    def save(self):
-        sql = '''
-            INSERT INTO games (bet, result, player_id)
-            VALUES (?, ?, ?)
-        '''
-        cursor.execute(sql, (self.bet, self.result, self.player_id))
-        conn.commit()
+    @classmethod
+    def get_all(cls):
+        sql = """
+            SELECT * FROM games
+        """
+
+        rows = cursor.execute(sql).fetchall()
+
+        return [cls.instance_from_db(row) for row in rows]
 
     @classmethod
     def drop_table(cls):
@@ -167,9 +186,3 @@ class Game:
         '''
         cursor.execute(sql)
         conn.commit()
-
-    
-    @classmethod
-    def create(cls, bet, result, player_id):
-        result = cls(player = None, result = result, bet = bet, player_id = player_id)
-        result.save()
