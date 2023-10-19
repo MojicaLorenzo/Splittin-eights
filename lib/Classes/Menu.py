@@ -3,7 +3,15 @@ from Classes.Player import Player
 from Classes.Game import Game
 from Classes.Cards import Card
 
+# MENU BOOT UP
+
+if __name__ == "__main__":
+    menu = Menu()
+    menu.main_menu()
+
 class Menu:
+
+# CONSTRUCTOR
 
     def __init__(self):
         self.players = []
@@ -15,9 +23,11 @@ class Menu:
         self.bet_amount = None
         self.player_chips = None
 
+# MENUS
+
     def main_menu(self):
-        Player.drop_table()
-        Game.drop_table()
+        # Player.drop_table()
+        # Game.drop_table()
         Player.create_table()
         Game.create_table()
         while True:
@@ -40,7 +50,65 @@ class Menu:
                 break
             else:
                 input("Invalid choice. Press Enter to continue...")
+
+    def results_menu(self):
+        os.system('clear' if os.name == 'posix' else 'cls')
+        while True:
+            print("RESULTS MENU")
+            print("1. Results by name")
+            print("2. ALL Game Results")
+            print("3. Exit")
+            choice = input("Enter your choice: ")
+
+            if choice == "1":
+                self.results_by_name()
+            elif choice == "2":
+                Game.get_all()
+            elif choice == "3":
+                self.main_menu()
+                break
                 
+    def game_menu(self):
+        while True:
+            print("PLAYER MENU")
+            print("1. New Game")
+            print("2. Check Chip Count")
+            print("3. Cash Out")
+            print("4. DELETE PLAYER")
+            choice = input("Enter your choice: ")
+
+            if choice == "1":
+                self.new_game()
+            elif choice == "2":
+                self.display_chips()
+            elif choice == "3":
+                self.main_menu()
+            elif choice == "4":
+                self.delete_player()
+                break
+            else:
+                input("Invalid choice. Press Enter to continue...")
+
+    def in_game_menu(self):
+        while True:
+            print("PLAY MENU")
+            print("1. Hit")
+            print("2. Stay")
+            print("3. Quit")
+            choice = input("Enter your choice: ")
+
+            if choice == "1":
+                self.player_hit()
+            elif choice == "2":
+                Game.dealer_play(self)
+            elif choice == "3":
+                self.game_menu()
+                break
+            else:
+                input("Invalid choice. Press Enter to continue...")
+
+# PLAYER OPTIONS
+
     def new_player(self):
         player_name = input("Enter your player's name: ")
         player_chips = input("Enter the starting chips amount: ")
@@ -70,60 +138,25 @@ class Menu:
 
         input("Player not found. Press Enter to continue...")
 
-    def results_menu(self):
-        os.system('clear' if os.name == 'posix' else 'cls')
-        while True:
-            print("RESULTS MENU")
-            print("1. Results by name")
-            print("2. ALL Game Results")
-            print("3. Exit")
-            choice = input("Enter your choice: ")
+    def display_chips(self):
+        print(f'{self.current_player.name} has {self.current_player.chips} chips.')
 
-            if choice == "1":
-                print('Under Construction')
-            elif choice == "2":
-                print('Under Construction')
-            elif choice == "3":
-                self.main_menu()
-                break
-
-    def game_menu(self):
-        while True:
-            print("PLAYER MENU")
-            print("1. New Game")
-            print("2. Check Chip Count")
-            print("3. Cash Out")
-            print("4. DELETE PLAYER")
-            choice = input("Enter your choice: ")
-
-            if choice == "1":
-                self.new_game()
-            elif choice == "2":
-                self.display_chips()
-            elif choice == "3":
-                self.main_menu()
-            elif choice == "4":
-                self.delete_player()
-                break
-            else:
-                input("Invalid choice. Press Enter to continue...")
+# GAMEPLAY
 
     def new_game(self):
         self.place_bet()
         self.calc_winnings()
-        Game.generate_deck(self)
         os.system('clear' if os.name == 'posix' else 'cls')
+        Game.generate_deck(self)
         Game.deal_initial_cards(self)
         self.calculate_hand_value(self.player_hand)
-        # self.show_dealers_top_card()
-        #ascii art
+
+        #ASCII ART
+
         hidden_card = {"rank": "X", "suit": "X"}
         dealer_display = [hidden_card] + [self.dealer_hand[1]]
         self.display_hand_ascii(self.player_hand, title="Player's Hand")
         self.display_hand_ascii(dealer_display, title="Dealer's Hand")
-        #ascii art
-        # self.display_hand_ascii(self.player_hand, title="Player's Hand")
-        # self.display_hand_ascii(self.dealer_hand, title="Dealer's Hand")
         self.in_game_menu()
 
         pass
@@ -150,13 +183,10 @@ class Menu:
         return hand_value
     
     def show_dealers_top_card(self):
-        # print(self.dealer_hand[1])
         hidden_card = {"rank": "X", "suit": "X"}
         dealer_display = [hidden_card] + [self.dealer_hand[1]]
         self.display_hand_ascii(dealer_display, title="Dealer's Hand")
 
-    def display_chips(self):
-        print(f'{self.current_player.name} has {self.current_player.chips} chips.')
 
     def place_bet(self):
         while True:
@@ -168,31 +198,11 @@ class Menu:
             else:
                 print("Invalid bet amount. Please enter a valid number.")
 
-    def in_game_menu(self):
-        while True:
-            print("PLAY MENU")
-            print("1. Hit")
-            print("2. Stay")
-            print("3. Quit")
-            choice = input("Enter your choice: ")
-
-            if choice == "1":
-                self.player_hit()
-            elif choice == "2":
-                Game.dealer_play(self)
-            elif choice == "3":
-                self.game_menu()
-                break
-            else:
-                input("Invalid choice. Press Enter to continue...")
-
     def player_hit(self):
         # Player requests a hit (draws a card)
         if not self.is_game_over():
             self.player_hand.append(self.deck.pop())
         self.calculate_hand_value(self.player_hand)
-        # print(self.player_hand)
-        # print(self.dealer_hand[1])
         self.display_hand_ascii(self.player_hand, title="Player's Hand")
         self.show_dealers_top_card()
 
@@ -209,11 +219,6 @@ class Menu:
         dealer_value = self.calculate_hand_value(self.dealer_hand)
         return player_value >= 21 or dealer_value >= 21
     
-    def update_results(self):
-        winner = Game.determine_winner(self)
-        player_num = Player.find_by_name(self.current_player.name)
-        Game.create(self.bet_amount, winner, player_num.id)
-    
     def calc_winnings(self):
         current_bet = int(self.bet_amount)
         result = Game.determine_winner(self)
@@ -224,6 +229,13 @@ class Menu:
         elif result == "Dealer":
             return 0
         
+# DATABASE CHANGES
+        
+    def update_results(self):
+        winner = Game.determine_winner(self)
+        player_num = Player.find_by_name(self.current_player.name)
+        Game.create(self.bet_amount, winner, player_num.id)
+    
     def update_chips(self):
         current = Player.find_by_name(self.current_player.name)
         new_chips = int(self.current_player.chips) + (self.calc_winnings())
@@ -240,6 +252,9 @@ class Menu:
         Player.delete(current)
         self.main_menu()
 
-if __name__ == "__main__":
-    menu = Menu()
-    menu.main_menu()
+    def results_by_name(self):
+        player_name = input("Enter the player's name to load: ")
+        current_search = Player.find_by_name(player_name)
+        results = Game.find_by_results_id(current_search.id)
+        for result in results:
+            print(result.result)

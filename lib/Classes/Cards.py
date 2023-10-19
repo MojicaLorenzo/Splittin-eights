@@ -1,52 +1,13 @@
-# class Cards:
-#     def __init__(self, rank, suit):
-#         self.rank = rank
-#         self.suit = suit
-#         pass
-
 class Card:
+
+# CONSTRUCTOR
+
     def __init__(self, rank, suit):
         self.rank = rank
         self.suit = suit
-
-    def __str__(self):
-        return f"{self.rank} of {self.suit}"
-
-    def get_value(self):
-        # Calculate the value of the card for blackjack
-        if self.rank.isdigit():
-            return int(self.rank)
-        elif self.rank in ("K", "Q", "J"):
-            return 10
-        elif self.rank == "A":
-            return 11
         
-    # def ascii_representation(self):
-    #     lines = ["+-----+"] * 7
-    #     rank = self.rank
-    #     if rank == "X":
-    #         for i in range(1, 6):
-    #             lines[i] = "|     |"
-    #         return lines
-    #     if self.rank == "10":  # Adjust for two-digit ranks
-    #         rank = "10"
-    #     else:
-    #         rank = " " + self.rank
+# ASCII FORMAT
 
-    #     # Assign suit symbols
-    #     suit_symbols = {
-    #         "Hearts": "\u2665",
-    #         "Diamonds": "\u2666",
-    #         "Clubs": "\u2663",
-    #         "Spades": "\u2660"
-    #     }
-
-    #     lines[1] = f"|{rank}    |"
-    #     lines[2] = f"| {suit_symbols[self.suit]}   |"
-    #     lines[4] = f"|   {suit_symbols[self.suit]} |"
-    #     lines[5] = f"|    {rank}|"
-
-    #     return lines
     def ascii_representation(self):
         lines = ["+-----+"] * 7
         rank = self.rank
@@ -76,7 +37,6 @@ class Card:
         lines[5] = f"|   {rank}|"
 
         return lines
-
 
     def __repr__(self):
         return str(self)
