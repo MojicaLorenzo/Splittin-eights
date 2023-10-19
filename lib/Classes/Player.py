@@ -113,3 +113,15 @@ class Player:
         row = cursor.execute(sql, (name, )).fetchone()
 
         return cls.instance_from_db(row) if row else None
+    
+    @classmethod
+    def find_by_id(cls, id):
+        sql = ''' 
+            SELECT *
+            FROM players
+            WHERE id = ?
+        '''
+
+        row = cursor.execute(sql, (id, )).fetchone()
+
+        return cls.instance_from_db(row) if row else None

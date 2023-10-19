@@ -63,7 +63,7 @@ class Menu:
             if choice == "1":
                 self.results_by_name()
             elif choice == "2":
-                Game.get_all()
+                self.get_all_results()
             elif choice == "3":
                 self.main_menu()
                 break
@@ -257,4 +257,14 @@ class Menu:
         current_search = Player.find_by_name(player_name)
         results = Game.find_by_results_id(current_search.id)
         for result in results:
-            print(result.result)
+            print(f'Result:{result.result} \n   {player_name} bet {result.bet} coins')
+
+    def get_all_results(self):
+        all_results = Game.get_all()
+        print(all_results)
+        for result in all_results:
+            player = Player.find_by_id(result.player_id)
+            if result.result == "Tie":
+                print(f'Result of game is a Tie \n    {player.name} bet {result.bet} coins')
+            else:
+                print(f'{result.result} WON \n   {player.name} bet {result.bet} coins')
