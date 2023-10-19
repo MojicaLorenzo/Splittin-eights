@@ -51,6 +51,9 @@ class Game:
         print(self.player_hand)
         # print(self.dealer_hand)
 
+  
+
+
     def player_hit(self):
         # Player requests a hit (draws a card)
         if not self.is_game_over():
@@ -297,6 +300,8 @@ class Card:
             return 10
         elif self.rank == "A":
             return 11
+
+    
 
     def __repr__(self):
         return str(self)

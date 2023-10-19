@@ -37,7 +37,7 @@ class Game:
 
     def generate_deck(self):
         ranks = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"]
-        suits = ["\u2663", "\u2665", "\u2666", "\u2660"]
+        suits = ["Hearts", "Diamonds", "Clubs", "Spades"]
         deck = [{"rank": rank, "suit": suit} for rank in ranks for suit in suits]
         random.shuffle(deck)
         return deck
@@ -49,18 +49,32 @@ class Game:
         for _ in range(2):
             self.player_hand.append(self.deck.pop())
             self.dealer_hand.append(self.deck.pop())
-        print(self.player_hand)
+        # print(self.player_hand)
+        # Game.display_hand(self.player_hand, title="Player's Hand")
+        # self.display_hand_ascii(self.player_hand, title="Player's Hand")
+
+    def display_hand(self, hand, title=""):
+        from Classes.Cards import Card
+        cards_ascii = [Card(card["rank"], card["suit"]).ascii_representation() for card in hand]
+        for i in range(7):
+            print(" ".join(card[i] for card in cards_ascii))
+        print(title)
 
     def player_hit(self):
         # Player requests a hit (draws a card)
         if not self.is_game_over():
             self.player_hand.append(self.deck.pop())
+        #new code ascii
+        self.display_hand(self.player_hand, title="Player's Hand")
 
     def dealer_play(self):
         # Dealer plays according to standard rules (stands on 17 or higher)
         while self.calculate_hand_value(self.dealer_hand) < 17 and self.calculate_hand_value(self.player_hand) <21 :
             self.dealer_hand.append(self.deck.pop())
-        print(self.dealer_hand)
+        # print(self.dealer_hand)
+        # ascii code
+        self.display_hand_ascii(self.player_hand, title="Player's Hand")
+        self.display_hand_ascii(self.dealer_hand, title="Dealer's Hand")
         Game.determine_winner(self)
         print(f'WINNER: {Game.determine_winner(self)}')
         print(f'{self.current_player.name} won {self.calc_winnings()} chips')

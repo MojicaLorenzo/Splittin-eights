@@ -1,6 +1,7 @@
 import os
 from Classes.Player import Player
 from Classes.Game import Game
+from Classes.Cards import Card
 
 class Menu:
 
@@ -15,8 +16,8 @@ class Menu:
         self.player_chips = None
 
     def main_menu(self):
-        # Player.drop_table()
-        # Game.drop_table()
+        Player.drop_table()
+        Game.drop_table()
         Player.create_table()
         Game.create_table()
         while True:
@@ -114,8 +115,17 @@ class Menu:
         os.system('clear' if os.name == 'posix' else 'cls')
         Game.deal_initial_cards(self)
         self.calculate_hand_value(self.player_hand)
-        self.show_dealers_top_card()
+        # self.show_dealers_top_card()
+        #ascii art
+        hidden_card = {"rank": "X", "suit": "X"}
+        dealer_display = [hidden_card] + [self.dealer_hand[1]]
+        self.display_hand_ascii(self.player_hand, title="Player's Hand")
+        self.display_hand_ascii(dealer_display, title="Dealer's Hand")
+        #ascii art
+        # self.display_hand_ascii(self.player_hand, title="Player's Hand")
+        # self.display_hand_ascii(self.dealer_hand, title="Dealer's Hand")
         self.in_game_menu()
+
         pass
 
     def calculate_hand_value(self, hand):
@@ -140,7 +150,10 @@ class Menu:
         return hand_value
     
     def show_dealers_top_card(self):
-        print(self.dealer_hand[1])
+        # print(self.dealer_hand[1])
+        hidden_card = {"rank": "X", "suit": "X"}
+        dealer_display = [hidden_card] + [self.dealer_hand[1]]
+        self.display_hand_ascii(dealer_display, title="Dealer's Hand")
 
     def display_chips(self):
         print(f'{self.current_player.name} has {self.current_player.chips} chips.')
@@ -178,8 +191,17 @@ class Menu:
         if not self.is_game_over():
             self.player_hand.append(self.deck.pop())
         self.calculate_hand_value(self.player_hand)
-        print(self.player_hand)
-        print(self.dealer_hand[1])
+        # print(self.player_hand)
+        # print(self.dealer_hand[1])
+        self.display_hand_ascii(self.player_hand, title="Player's Hand")
+        self.show_dealers_top_card()
+
+    def display_hand_ascii(self, hand, title=""):
+        cards_ascii = [Card(card["rank"], card["suit"]).ascii_representation() for card in hand]
+        for i in range(7):
+            print(" ".join(card[i] for card in cards_ascii))
+        print(title)
+
 
     def is_game_over(self):
         # Check if the game is over (player or dealer has blackjack or busted)
