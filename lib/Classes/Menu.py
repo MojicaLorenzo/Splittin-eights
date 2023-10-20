@@ -261,7 +261,6 @@ class Menu:
 
     def get_all_results(self):
         all_results = Game.get_all()
-        print(all_results)
         for result in all_results:
             player = Player.find_by_id(result.player_id)
             if result.result == "Tie":
