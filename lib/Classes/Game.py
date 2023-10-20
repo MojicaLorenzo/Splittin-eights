@@ -77,7 +77,6 @@ class Game:
         # Dealer plays according to standard rules (stands on 17 or higher)
         while self.calculate_hand_value(self.dealer_hand) < 17 and self.calculate_hand_value(self.player_hand) <21 :
             self.dealer_hand.append(self.deck.pop())
-        # print(self.dealer_hand)
         # ascii code
         self.display_hand_ascii(self.player_hand, title="Player's Hand")
         self.display_hand_ascii(self.dealer_hand, title="Dealer's Hand")
